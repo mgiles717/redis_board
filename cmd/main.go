@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 
+	"github.com/mgiles717/redis_board/pkg/redis"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,6 +30,7 @@ func helloResponse(c *gin.Context) {
 }
 
 func main() {
+	redis.InitRedis()
 	router := gin.Default()
 
 	// Define Routes
