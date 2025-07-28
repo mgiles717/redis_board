@@ -3,39 +3,40 @@ package main
 import (
 	"net/http"
 
-	"github.com/mgiles717/redis_board/pkg/redis"
-
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
+
+	"github.com/mgiles717/redis_board/pkg/redishandler"
 )
-
-type falseData struct {
-	Id       int    `json:"id"`
-	Username string `json:"username"`
-}
-
-var testData = []falseData{
-	{Id: 123, Username: "Bob"},
-	{Id: 456, Username: "Alex"},
-	{Id: 789, Username: "John"},
-}
 
 // GET '/' Route
 func homeResponse(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, testData)
+	c.HTML(http.StatusOK, "index.tmpl", gin.H{
+		"title": "Homepage",
+	})
 }
 
 // GET '/hello' Route
-func helloResponse(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, "Hello")
+//
+// Handler function to allow access to redis client while satisfying
+// Gin handler signature.
+func leaderboardResponse(rdb *redis.Client) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		redishandler.RedisHello(rdb)
+	}
+
 }
 
 func main() {
-	redis.InitRedis()
+	redisClient := redishandler.InitRedis()
 	router := gin.Default()
+
+	// Allow access to read template directory outside of cmd
+	router.LoadHTMLGlob("templates/*")
 
 	// Define Routes
 	router.GET("/", homeResponse)
-	router.GET("/hello", helloResponse)
+	router.GET("/leaderboard", leaderboardResponse(redisClient))
 
 	router.Run()
 }
