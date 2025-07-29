@@ -1,4 +1,4 @@
-package redishandler
+package leaderboard
 
 import (
 	"context"
@@ -22,6 +22,20 @@ func InitRedis() *redis.Client {
 	return RedisClient
 }
 
-func RedisHello(*redis.Client) {
+func RedisHello(rdb *redis.Client) {
 	log.Println("Hello!")
 }
+
+func SetUserScore(rdb *redis.Client, username string, score int64) error {
+	ctx := context.Background()
+
+	return rdb.ZAdd(ctx, "leaderboard", redis.Z{
+		Member: username,
+		// ZAdd only accepts f64
+		Score: float64(score),
+	}).Err()
+}
+
+// func GetLeaderboard(rdb *redis.Client) error {
+
+// }
