@@ -7,8 +7,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// Creates a Redis Client that binds to localhost:6379
 func InitRedis() *redis.Client {
-
 	RedisClient := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379", // Default Redis Addr + Port
 	})
@@ -22,10 +22,19 @@ func InitRedis() *redis.Client {
 	return RedisClient
 }
 
-func RedisHello(rdb *redis.Client) {
-	log.Println("Hello!")
+// Retrieves the whole ZSET with the key "leaderboard"
+func GetWholeLeaderboard(rdb *redis.Client) []redis.Z {
+	ctx := context.Background()
+
+	membersWithScores, err := rdb.ZRangeWithScores(ctx, "leaderboard", 0, -1).Result()
+	if err != nil {
+		panic(err)
+	}
+
+	return membersWithScores
 }
 
+// Sets a username and score in the Redis ZSET with the key "leaderboard"
 func SetUserScore(rdb *redis.Client, username string, score int64) error {
 	ctx := context.Background()
 
@@ -35,7 +44,3 @@ func SetUserScore(rdb *redis.Client, username string, score int64) error {
 		Score: float64(score),
 	}).Err()
 }
-
-// func GetLeaderboard(rdb *redis.Client) error {
-
-// }

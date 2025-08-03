@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Title }}</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 50%;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ .Title }}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .LeaderboardItems }}
+            <tr>
+                <td>{{ .Member }}</td>
+                <td>{{ printf "%d" .Score }}</td>
+            </tr>
+            {{ else }}
+            <tr>
+                <td colspan="2">No items found</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</body>
+</html>

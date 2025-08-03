@@ -9,24 +9,47 @@ import (
 	"github.com/mgiles717/redis_board/pkg/leaderboard"
 )
 
-// GET '/' Route
+// Home page response for '/' route (index)
 func HomeResponse(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.tmpl", gin.H{
 		"title": "Homepage",
 	})
 }
 
-// GET '/hello' Route
+// SendLeaderboardResponse returns a Gin Handler Function,
+// fetching all leaderboard data from the Redis ZSET with the key "leaderboard".
+// This data is then converted to an array of UserRecords, which is a struct consisting
+// of the user name and score.
 //
-// Handler function to allow access to redis client while satisfying
-// Gin handler signature.
-// func LeaderboardResponse(rdb *redis.Client) gin.HandlerFunc {
-// 	return func(ctx *gin.Context) {
-// 		leaderboard.GetLeaderboard(rdb)
-// 	}
+// Finally, this is passed into the template.
+func SendLeaderboardResponse(rdb *redis.Client) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		membersWithScores := leaderboard.GetWholeLeaderboard(rdb)
 
-// }
+		type UserRecord struct {
+			Member string
+			Score  uint32
+		}
 
+		items := make([]UserRecord, len(membersWithScores))
+		for i, z := range membersWithScores {
+			items[i] = UserRecord{
+				Member: z.Member.(string),
+				Score:  uint32(z.Score),
+			}
+		}
+
+		ctx.HTML(http.StatusOK, "leaderboard.tmpl", gin.H{
+			"LeaderboardItems": items,
+			"Title":            "Leaderboard",
+		})
+	}
+}
+
+// SendScoreResponse returns a Gin Handler Function
+// that processes a JSON post request and the username parameter
+// set in the route e.g (/users/abcd) to set the username and score
+// in the Redis ZSET with the key "leaderboard"
 func SendScoreResponse(rdb *redis.Client) gin.HandlerFunc {
 	type UserPayload struct {
 		Score int64 `json:"score"`
@@ -56,12 +79,16 @@ func main() {
 	router := gin.Default()
 
 	// Allow access to read template directory outside of cmd
-	router.LoadHTMLGlob("templates/*")
+	// router.LoadHTMLGlob("templates/*")
+	// LoadHTMLGlob seems to load in an unnamed 3rd template??
+	router.LoadHTMLFiles("templates/index.tmpl", "templates/leaderboard.tmpl")
 
 	// Define Routes
+	// GET
 	router.GET("/", HomeResponse)
+	router.GET("/leaderboard", SendLeaderboardResponse(redisClient))
+	// PUT
 	router.PUT("/users/:username", SendScoreResponse(redisClient))
-	// router.GET("/leaderboard", LeaderboardResponse(redisClient))
 
 	router.Run()
 }
